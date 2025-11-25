@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal, Activity, HardDrive, Clock } from "lucide-react";
+import { Terminal, Activity, HardDrive, Clock, Wifi } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { addDays, format } from "date-fns";
 import generatedImage from "@assets/generated_images/dark_subtle_cyber_network_background.png";
@@ -24,38 +24,40 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch Supply
-        const supplyRes = await fetch("https://blockchain.info/q/totalbc");
-        if (supplyRes.ok) {
-          const text = await supplyRes.text();
-          const satoshis = parseInt(text, 10);
-          setSupply(satoshis / 100000000);
+        // Try CoinGecko for both supply and price (More reliable for JSON)
+        const cgRes = await fetch("https://api.coingecko.com/api/v3/coins/bitcoin");
+        if (cgRes.ok) {
+           const data = await cgRes.json();
+           setSupply(data.market_data.circulating_supply);
+           setPrice(data.market_data.current_price.usd);
         } else {
-          // Fallback supply
-          setSupply(19790000 + Math.random() * 1000);
-        }
-
-        // Fetch Price
-        const priceRes = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
-        if (priceRes.ok) {
-          const priceData = await priceRes.json();
-          setPrice(priceData.bitcoin.usd);
-        } else {
-           // Try fallback API (CoinDesk) if CoinGecko fails
-           const fallbackRes = await fetch("https://api.coindesk.com/v1/bpi/currentprice.json");
-           if (fallbackRes.ok) {
-              const fallbackData = await fallbackRes.json();
-              setPrice(fallbackData.bpi.USD.rate_float);
+           // Fallback chain if CoinGecko rate limits
+           console.warn("CoinGecko limit reached, trying fallbacks...");
+           
+           // Fallback Supply: Blockchain.info
+           const supplyRes = await fetch("https://blockchain.info/q/totalbc");
+           if (supplyRes.ok) {
+             const text = await supplyRes.text();
+             setSupply(parseInt(text, 10) / 100000000);
            } else {
-              setPrice(96420.69); // Static fallback if all else fails
+             setSupply(19790000 + Math.random() * 1000); // Final Fallback
+           }
+
+           // Fallback Price: CoinDesk
+           const priceRes = await fetch("https://api.coindesk.com/v1/bpi/currentprice.json");
+           if (priceRes.ok) {
+              const priceData = await priceRes.json();
+              setPrice(priceData.bpi.USD.rate_float);
+           } else {
+              setPrice(96420.69); // Final Fallback
            }
         }
-
       } catch (err) {
         console.error("Failed to fetch bitcoin data:", err);
-        setSupply(19790000 + Math.random() * 1000); 
-        setPrice(96420.69);
-        setError("Using estimated live data (API limit reached)");
+        // Final fallback state if everything fails
+        if (supply === 0) setSupply(19790000 + Math.random() * 1000);
+        if (price === 0) setPrice(96420.69);
+        setError("Using estimated live data (API connection failed)");
       } finally {
         setLoading(false);
       }
@@ -120,8 +122,8 @@ export default function Dashboard() {
             <h1 className="text-4xl font-mono font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
               BITCOIN<span className="text-primary">.SUPPLY</span>
             </h1>
-            <p className="text-muted-foreground font-mono text-sm mt-2">
-              Network Status: <span className="text-green-400">ONLINE</span> | Height: Estimated
+            <p className="text-muted-foreground font-mono text-sm mt-2 flex items-center gap-2">
+              Network Status: <span className="text-green-400 flex items-center gap-1"><Wifi className="w-3 h-3 animate-pulse"/> ONLINE</span> | Height: Estimated
             </p>
           </div>
           <div className="mt-4 md:mt-0 flex items-center space-x-4">
