@@ -128,7 +128,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary selection:text-black overflow-hidden relative">
+    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary selection:text-black overflow-hidden relative" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       {/* Background Texture */}
       <div 
         className="absolute inset-0 opacity-20 pointer-events-none z-0"
