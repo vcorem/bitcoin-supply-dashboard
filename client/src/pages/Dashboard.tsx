@@ -84,6 +84,15 @@ export default function Dashboard() {
   
   const progressPercent = (supply / MAX_SUPPLY) * 100;
   
+  // Next halving calculation (occurs every 210,000 blocks)
+  // Last halving was at block 840,000 (April 2024)
+  const HALVING_INTERVAL = 210000;
+  const lastHalvingBlock = 840000;
+  const nextHalvingBlock = lastHalvingBlock + HALVING_INTERVAL; // 1,050,000
+  const blocksUntilHalving = blockHeight > 0 ? nextHalvingBlock - blockHeight : 0;
+  const daysUntilHalving = blocksUntilHalving / BLOCKS_PER_DAY;
+  const nextHalvingDate = addDays(new Date(), daysUntilHalving);
+  
   // Chart Data Generation (Projected)
   const chartData = [];
   const historyPoints = 30;
@@ -269,7 +278,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8 border-t border-white/5">
             <StatItem label="Daily Emission" value={`~${Math.round(DAILY_EMISSION)} BTC`} />
             <StatItem label="Inflation Rate" value="0.85%" />
-            <StatItem label="Next Halving" value="~2028" />
+            <StatItem label="Next Halving" value={blockHeight > 0 ? format(nextHalvingDate, "MMM d, yyyy") : "~2028"} />
             <StatItem label="Last BTC Mined" value="~2140" />
         </div>
 
