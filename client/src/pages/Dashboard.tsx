@@ -172,7 +172,7 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-5xl md:text-6xl font-mono font-bold tracking-tight text-white">
+              <div className="text-4xl sm:text-5xl md:text-6xl font-mono font-bold tracking-tight text-white break-words">
                 <CountUp value={supply} decimals={2} />
               </div>
               <div className="mt-4 space-y-2">
@@ -193,7 +193,7 @@ export default function Dashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-5xl md:text-6xl font-mono font-bold tracking-tight text-secondary">
+              <div className="text-4xl sm:text-5xl md:text-6xl font-mono font-bold tracking-tight text-secondary break-words">
                  <CountUp value={remainingTotal} decimals={2} />
               </div>
               <p className="mt-4 text-sm text-muted-foreground font-mono">
