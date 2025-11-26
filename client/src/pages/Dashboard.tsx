@@ -171,8 +171,8 @@ export default function Dashboard() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-4xl sm:text-5xl md:text-6xl font-mono font-bold tracking-tight text-white break-words">
+            <CardContent className="overflow-hidden">
+              <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-mono font-bold tracking-tight text-white whitespace-nowrap overflow-x-auto scrollbar-hide">
                 <CountUp value={supply} decimals={2} />
               </div>
               <div className="mt-4 space-y-2">
@@ -192,8 +192,8 @@ export default function Dashboard() {
                 Remaining to Mine
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-4xl sm:text-5xl md:text-6xl font-mono font-bold tracking-tight text-secondary break-words">
+            <CardContent className="overflow-hidden">
+              <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-mono font-bold tracking-tight text-secondary whitespace-nowrap overflow-x-auto scrollbar-hide">
                  <CountUp value={remainingTotal} decimals={2} />
               </div>
               <p className="mt-4 text-sm text-muted-foreground font-mono">
