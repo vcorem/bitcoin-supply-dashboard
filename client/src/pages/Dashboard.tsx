@@ -27,35 +27,46 @@ export default function Dashboard() {
       try {
         // 1. Fetch CoinGecko (Supply & Price)
         const cgRes = await fetch("https://api.coingecko.com/api/v3/coins/bitcoin");
+        console.log("CoinGecko API status:", cgRes.status);
+        
         if (cgRes.ok) {
            const data = await cgRes.json();
-           setSupply(data.market_data.circulating_supply);
-           setPrice(data.market_data.current_price.usd);
+           const fetchedSupply = data.market_data.circulating_supply;
+           const fetchedPrice = data.market_data.current_price.usd;
+           console.log("✅ CoinGecko data - Supply:", fetchedSupply, "Price:", fetchedPrice);
+           setSupply(fetchedSupply);
+           setPrice(fetchedPrice);
+           setError(null);
         } else {
-           // Fallback logic (same as before)
-           console.warn("CoinGecko limit reached, trying fallbacks...");
+           // Fallback logic
+           console.warn("⚠️ CoinGecko returned status:", cgRes.status, "- using fallback APIs");
            const supplyRes = await fetch("https://blockchain.info/q/totalbc");
            if (supplyRes.ok) {
              const text = await supplyRes.text();
-             setSupply(parseInt(text, 10) / 100000000);
+             const calculatedSupply = parseInt(text, 10) / 100000000;
+             console.log("📊 Blockchain.info supply:", calculatedSupply);
+             setSupply(calculatedSupply);
            } else {
              setSupply(19790000); 
            }
            const priceRes = await fetch("https://api.coindesk.com/v1/bpi/currentprice.json");
            if (priceRes.ok) {
               const priceData = await priceRes.json();
+              console.log("💰 CoinDesk price:", priceData.bpi.USD.rate_float);
               setPrice(priceData.bpi.USD.rate_float);
            } else {
               setPrice(96420.69); 
            }
+           setError("Using fallback data sources (CoinGecko rate limited)");
         }
 
         // 2. Fetch Block Height (Using blockchain.info)
-        // This explains WHY the supply is static (it's tied to blocks)
         const heightRes = await fetch("https://blockchain.info/q/getblockcount");
         if (heightRes.ok) {
             const heightText = await heightRes.text();
-            setBlockHeight(parseInt(heightText, 10));
+            const currentHeight = parseInt(heightText, 10);
+            console.log("⛏️ Current block height:", currentHeight);
+            setBlockHeight(currentHeight);
         } else {
             // Estimate height if API fails (approx height based on date)
             setBlockHeight(872000); 
