@@ -22,6 +22,7 @@ jobs:
           cache: 'npm'
       
       - name: Set up JDK 17
+        id: setup-java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -29,15 +30,6 @@ jobs:
       
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-      
-      - name: Configure Gradle for Java 17
-        run: |
-          echo "org.gradle.jvmargs=-Xmx1536m" >> android/gradle.properties
-          echo "android.useAndroidX=true" >> android/gradle.properties
-          echo "android.enableJetifier=true" >> android/gradle.properties
-      
-      - name: Set JAVA_HOME
-        run: echo "JAVA_HOME=${{ steps.setup-java.outputs.path }}" >> $GITHUB_ENV
       
       - name: Install dependencies
         run: npm ci
