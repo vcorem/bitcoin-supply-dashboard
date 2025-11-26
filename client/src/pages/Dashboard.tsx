@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal, Activity, HardDrive, Clock, Wifi } from "lucide-react";
+import { Terminal, Activity, HardDrive, Clock, Wifi, Box } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { addDays, format } from "date-fns";
 import generatedImage from "@assets/generated_images/dark_subtle_cyber_network_background.png";
@@ -11,6 +11,7 @@ import generatedImage from "@assets/generated_images/dark_subtle_cyber_network_b
 export default function Dashboard() {
   const [supply, setSupply] = useState<number>(0);
   const [price, setPrice] = useState<number>(0);
+  const [blockHeight, setBlockHeight] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,38 +25,45 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Try CoinGecko for both supply and price (More reliable for JSON)
+        // 1. Fetch CoinGecko (Supply & Price)
         const cgRes = await fetch("https://api.coingecko.com/api/v3/coins/bitcoin");
         if (cgRes.ok) {
            const data = await cgRes.json();
            setSupply(data.market_data.circulating_supply);
            setPrice(data.market_data.current_price.usd);
         } else {
-           // Fallback chain if CoinGecko rate limits
+           // Fallback logic (same as before)
            console.warn("CoinGecko limit reached, trying fallbacks...");
-           
-           // Fallback Supply: Blockchain.info
            const supplyRes = await fetch("https://blockchain.info/q/totalbc");
            if (supplyRes.ok) {
              const text = await supplyRes.text();
              setSupply(parseInt(text, 10) / 100000000);
            } else {
-             setSupply(19790000 + Math.random() * 1000); // Final Fallback
+             setSupply(19790000); 
            }
-
-           // Fallback Price: CoinDesk
            const priceRes = await fetch("https://api.coindesk.com/v1/bpi/currentprice.json");
            if (priceRes.ok) {
               const priceData = await priceRes.json();
               setPrice(priceData.bpi.USD.rate_float);
            } else {
-              setPrice(96420.69); // Final Fallback
+              setPrice(96420.69); 
            }
         }
+
+        // 2. Fetch Block Height (Using blockchain.info)
+        // This explains WHY the supply is static (it's tied to blocks)
+        const heightRes = await fetch("https://blockchain.info/q/getblockcount");
+        if (heightRes.ok) {
+            const heightText = await heightRes.text();
+            setBlockHeight(parseInt(heightText, 10));
+        } else {
+            // Estimate height if API fails (approx height based on date)
+            setBlockHeight(872000); 
+        }
+
       } catch (err) {
         console.error("Failed to fetch bitcoin data:", err);
-        // Final fallback state if everything fails
-        if (supply === 0) setSupply(19790000 + Math.random() * 1000);
+        if (supply === 0) setSupply(19790000);
         if (price === 0) setPrice(96420.69);
         setError("Using estimated live data (API connection failed)");
       } finally {
@@ -64,7 +72,6 @@ export default function Dashboard() {
     };
 
     fetchData();
-    // Refresh every minute
     const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
   }, []);
@@ -76,13 +83,11 @@ export default function Dashboard() {
   const date20M = addDays(new Date(), daysTo20M);
   
   const progressPercent = (supply / MAX_SUPPLY) * 100;
-  const progress20MPercent = (supply / TARGET_SUPPLY) * 100;
-
+  
   // Chart Data Generation (Projected)
   const chartData = [];
   const historyPoints = 30;
   for (let i = 0; i < historyPoints; i++) {
-    // Project backwards a bit to show "recent" growth
     chartData.push({
       name: format(addDays(new Date(), i - 5), "MMM dd"),
       value: supply + (i - 5) * DAILY_EMISSION
@@ -122,9 +127,14 @@ export default function Dashboard() {
             <h1 className="text-4xl font-mono font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
               BITCOIN<span className="text-primary">.SUPPLY</span>
             </h1>
-            <p className="text-muted-foreground font-mono text-sm mt-2 flex items-center gap-2">
-              Network Status: <span className="text-green-400 flex items-center gap-1"><Wifi className="w-3 h-3 animate-pulse"/> ONLINE</span> | Height: Estimated
-            </p>
+            <div className="flex items-center gap-4 mt-2 text-sm font-mono">
+                <span className="text-muted-foreground flex items-center gap-2">
+                    Status: <span className="text-green-400 flex items-center gap-1"><Wifi className="w-3 h-3 animate-pulse"/> ONLINE</span>
+                </span>
+                <span className="text-muted-foreground flex items-center gap-2 border-l border-white/10 pl-4">
+                    <Box className="w-3 h-3 text-primary"/> Block Height: <span className="text-white">{blockHeight.toLocaleString()}</span>
+                </span>
+            </div>
           </div>
           <div className="mt-4 md:mt-0 flex items-center space-x-4">
              <div className="text-right">
@@ -148,10 +158,18 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="bg-card/50 backdrop-blur-sm border-primary/20 shadow-[0_0_30px_-10px_rgba(247,147,26,0.1)]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-mono uppercase text-muted-foreground flex items-center gap-2">
-                <HardDrive className="w-4 h-4 text-primary" />
-                Circulating Supply
-              </CardTitle>
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-sm font-mono uppercase text-muted-foreground flex items-center gap-2">
+                    <HardDrive className="w-4 h-4 text-primary" />
+                    Circulating Supply
+                </CardTitle>
+                <div className="group relative">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+                    <div className="absolute right-0 top-4 w-48 p-2 bg-black border border-white/10 rounded text-[10px] text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                        Updates only when a new block is mined (~10 mins)
+                    </div>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-5xl md:text-6xl font-mono font-bold tracking-tight text-white">
